@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Mehrleistung Rechner</title>
+    <!-- Alpine.js einbinden -->
+    <script src="//unpkg.com/alpinejs@3" defer></script>
+    <!-- Tailwind CSS einbinden -->
+    <link
+      href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css"
+      rel="stylesheet"
+    />
+  </head>
+  <script>
+    function convertToDecimal(time) {
+      const sign = time.startsWith("-") ? -1 : 1;
+      const [hours, minutes] = time.replace("-", "").split(/[:.,]/);
+      const decimalHours = parseInt(hours, 10);
+      const decimalMinutes = minutes ? parseInt(minutes, 10) / 60 : 0;
+      return sign * (decimalHours + decimalMinutes);
+    }
+
+    function convertToTime(decimal) {
+      const sign = decimal < 0 ? "-" : "";
+      const absDecimal = Math.abs(decimal);
+      const hours = Math.floor(absDecimal);
+      const decimalPart = absDecimal - hours;
+      const mins = Math.round(decimalPart * 60);
+
+      return `${sign}${hours}:${mins < 10 ? "0" : ""}${mins}`;
+    }
+
+    function calcJAZÜZDuringYear(mlVj, JAZIST, offset) {
+      // Konvertiere alle Werte in Minuten
+      const mlVjMin = convertToDecimal(mlVj);
+      const JAZISTMin = convertToDecimal(JAZIST);
+      const offsetMin = convertToDecimal(offset);
+
+      // Berechne die maximal zulässige Mehrleistung unter Berücksichtigung des Offsets
+      const maxMehrleistung = -209 - offsetMin;
+      // Wähle den kleineren Wert zwischen der Mehrleistung des Vorjahres und der maximal zulässigen Mehrleistung
+      const bereinigteMehrleistung = Math.max(mlVjMin, maxMehrleistung);
+
+      // Addiere die bereinigte Mehrleistung und die ISTst. im Jahr
+      return convertToTime(bereinigteMehrleistung + JAZISTMin);
+    }
+
+    function calcJAZÜZEndYear(mlVj, JAZIST, offset, jazUeberzeitStand) {
+      // Konvertiere alle Werte in Minuten
+      const JAZÜZNetto = 2036 - convertToDecimal(jazUeberzeitStand);
+      if (JAZÜZNetto < 1827) {
+        JAZÜZOffsetBereinigt = 1827 - JAZÜZNetto;
+      }
+
+      const JAZÜZFinal =
+        JAZÜZNetto < 1827
+          ? JAZÜZOffsetBereinigt +
+            convertToDecimal(calcJAZÜZDuringYear(mlVj, JAZIST, offset))
+          : 0;
+
+      return convertToTime(JAZÜZFinal);
+    }
+
+    function dummyFunction() {
+      return "Dummy-Ergebnis";
+    }
+  </script>
+  <body class="bg-gray-100">
+    <div class="container mx-auto p-8 max-w-lg">
+      <h1 class="text-3xl mb-6 text-center font-bold text-gray-700">
+        Berechnung JAZ Überzeit bei Arbeitnehmer in Vollzeit
+      </h1>
+
+      <div
+        x-data="{ leistungVorjahr: '3:30', jazIst: '3:30', ergebnis: '0:00', verringerung: '0:00', jazUeberzeitStand :'0:00', datumCheck: false }"
+        x-effect="ergebnis = datumCheck ? calcJAZÜZEndYear(leistungVorjahr, jazIst, verringerung, jazUeberzeitStand) : calcJAZÜZDuringYear(leistungVorjahr, jazIst, verringerung)"
+        class="bg-white shadow-md rounded px-8 pt-6 pb-8 mb-4"
+      >
+        <div class="mb-4">
+          <label
+            for="leistungVorjahr"
+            class="block text-gray-700 text-sm font-bold mb-2"
+            >Mehrleistung Vorjahr:</label
+          >
+          <input
+            type="text"
+            id="leistungVorjahr"
+            x-model="leistungVorjahr"
+            class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+          />
+        </div>
+
+        <div class="mb-4">
+          <label for="jazIst" class="block text-gray-700 text-sm font-bold mb-2"
+            >JAZ ISTst. im Jahr:</label
+          >
+          <input
+            type="text"
+            id="jazIst"
+            x-model="jazIst"
+            class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+          />
+        </div>
+
+        <div class="mb-4">
+          <label
+            for="verringerung"
+            class="block text-gray-700 text-sm font-bold mb-2"
+            >JAZ Überzeit Verringerung durch vorige Absetzungen:</label
+          >
+          <input
+            type="text"
+            id="verringerung"
+            x-model="verringerung"
+            class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+          />
+        </div>
+
+        <div
+          class="flex items-start border border-orange-500 bg-lime-100 p-2 rounded mb-4"
+          style="background-color: rgb(224 242 254)"
+        >
+          <div class="flex flex-col items-center mr-4">
+            <label
+              for="datumCheck"
+              class="block text-gray-700 text-sm font-bold mr-2"
+            >
+              Absetzung am 3.12.:
+            </label>
+            <input
+              type="checkbox"
+              id="datumCheck"
+              x-model="datumCheck"
+              class="mt-5"
+            />
+          </div>
+          <div class="flex flex-col">
+            <label
+              for="jazUeberzeitStand"
+              class="block text-gray-700 text-sm font-bold mb-2"
+            >
+              JAZ ÜZ Stand 31.12.:
+            </label>
+            <input
+              type="text"
+              id="jazUeberzeitStand"
+              x-model="jazUeberzeitStand"
+              class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+            />
+          </div>
+        </div>
+
+        <div class="mb-6">
+          <h3 class="text-lg font-semibold">
+            Ergebnis: <span class="text-blue-600" x-text="ergebnis"></span>
+          </h3>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>
