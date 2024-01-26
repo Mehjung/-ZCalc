@@ -55,7 +55,7 @@
         JAZÜZNetto < 1827
           ? JAZÜZOffsetBereinigt +
             convertToDecimal(calcJAZÜZDuringYear(mlVj, JAZIST, offset))
-          : 0;
+          : convertToDecimal(calcJAZÜZDuringYear(mlVj, JAZIST, offset));
 
       return convertToTime(JAZÜZFinal);
     }
@@ -71,8 +71,8 @@
       </h1>
 
       <div
-        x-data="{ leistungVorjahr: '3:30', jazIst: '3:30', ergebnis: '0:00', verringerung: '0:00', jazUeberzeitStand :'0:00', datumCheck: false }"
-        x-effect="ergebnis = datumCheck ? calcJAZÜZEndYear(leistungVorjahr, jazIst, verringerung, jazUeberzeitStand) : calcJAZÜZDuringYear(leistungVorjahr, jazIst, verringerung)"
+        x-data="{ leistungVorjahr: '0:00', jazIst: '0:00', ergebnis: '0:00', verringerung: '0:00', jazUeberzeitStand :'0:00', datumCheck: false }"
+        x-effect="ergebnis = (datumCheck ? calcJAZÜZEndYear(leistungVorjahr, jazIst, verringerung, jazUeberzeitStand) : calcJAZÜZDuringYear(leistungVorjahr, jazIst, verringerung)); ergebnis = (ergebnis === 'NaN:NaN') ? '' : ergebnis"
         class="bg-white shadow-md rounded px-8 pt-6 pb-8 mb-4"
       >
         <div class="mb-4">
