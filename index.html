@@ -3,67 +3,18 @@
   <head>
     <title>Mehrleistung Rechner</title>
     <!-- Alpine.js einbinden -->
-    <script src="//unpkg.com/alpinejs@3" defer></script>
+
     <!-- Tailwind CSS einbinden -->
     <link
       href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css"
       rel="stylesheet"
     />
   </head>
-  <script>
-    function convertToDecimal(time) {
-      const sign = time.startsWith("-") ? -1 : 1;
-      const [hours, minutes] = time.replace("-", "").split(/[:.,]/);
-      const decimalHours = parseInt(hours, 10);
-      const decimalMinutes = minutes ? parseInt(minutes, 10) / 60 : 0;
-      return sign * (decimalHours + decimalMinutes);
-    }
-
-    function convertToTime(decimal) {
-      const sign = decimal < 0 ? "-" : "";
-      const absDecimal = Math.abs(decimal);
-      const hours = Math.floor(absDecimal);
-      const decimalPart = absDecimal - hours;
-      const mins = Math.round(decimalPart * 60);
-
-      return `${sign}${hours}:${mins < 10 ? "0" : ""}${mins}`;
-    }
-
-    function calcJAZÜZDuringYear(mlVj, JAZIST, offset) {
-      // Konvertiere alle Werte in Minuten
-      const mlVjMin = convertToDecimal(mlVj);
-      const JAZISTMin = convertToDecimal(JAZIST);
-      const offsetMin = convertToDecimal(offset);
-
-      // Berechne die maximal zulässige Mehrleistung unter Berücksichtigung des Offsets
-      const maxMehrleistung = -209 - offsetMin;
-      // Wähle den kleineren Wert zwischen der Mehrleistung des Vorjahres und der maximal zulässigen Mehrleistung
-      const bereinigteMehrleistung = Math.max(mlVjMin, maxMehrleistung);
-
-      // Addiere die bereinigte Mehrleistung und die ISTst. im Jahr
-      return convertToTime(bereinigteMehrleistung + JAZISTMin);
-    }
-
-    function calcJAZÜZEndYear(mlVj, JAZIST, offset, jazUeberzeitStand) {
-      // Konvertiere alle Werte in Minuten
-      const JAZÜZNetto = 2036 - convertToDecimal(jazUeberzeitStand);
-      if (JAZÜZNetto < 1827) {
-        JAZÜZOffsetBereinigt = 1827 - JAZÜZNetto;
-      }
-
-      const JAZÜZFinal =
-        JAZÜZNetto < 1827
-          ? JAZÜZOffsetBereinigt +
-            convertToDecimal(calcJAZÜZDuringYear(mlVj, JAZIST, offset))
-          : convertToDecimal(calcJAZÜZDuringYear(mlVj, JAZIST, offset));
-
-      return convertToTime(JAZÜZFinal);
-    }
-
-    function dummyFunction() {
-      return "Dummy-Ergebnis";
-    }
+  <script defer type="module">
+    import { loader } from "./loader.js";
+    loader(["./main.js"]).catch((err) => console.error(err));
   </script>
+
   <body class="bg-gray-100">
     <div class="container mx-auto p-8 max-w-lg">
       <h1 class="text-3xl mb-6 text-center font-bold text-gray-700">
@@ -71,8 +22,8 @@
       </h1>
 
       <div
-        x-data="{ leistungVorjahr: '0:00', jazIst: '0:00', ergebnis: '0:00', verringerung: '0:00', jazUeberzeitStand :'0:00', datumCheck: false }"
-        x-effect="ergebnis = (datumCheck ? calcJAZÜZEndYear(leistungVorjahr, jazIst, verringerung, jazUeberzeitStand) : calcJAZÜZDuringYear(leistungVorjahr, jazIst, verringerung)); ergebnis = (ergebnis === 'NaN:NaN') ? '' : ergebnis"
+        x-data="calc"
+        x-effect="calculate"
         class="bg-white shadow-md rounded px-8 pt-6 pb-8 mb-4"
       >
         <div class="mb-4">
@@ -105,7 +56,8 @@
           <label
             for="verringerung"
             class="block text-gray-700 text-sm font-bold mb-2"
-            >JAZ Überzeit Verringerung durch vorige Absetzungen:</label
+            >JAZ Überzeit Verringerung durch<br />
+            vorige Absetzungen aus dem Vorjahr:</label
           >
           <input
             type="text"
@@ -124,7 +76,7 @@
               for="datumCheck"
               class="block text-gray-700 text-sm font-bold mr-2"
             >
-              Absetzung am 3.12.:
+              Absetzung am 31.12.:
             </label>
             <input
               type="checkbox"
@@ -151,7 +103,7 @@
 
         <div class="mb-6">
           <h3 class="text-lg font-semibold">
-            Ergebnis: <span class="text-blue-600" x-text="ergebnis"></span>
+            Ergebnis: <span class="text-blue-600" x-text="result"></span>
           </h3>
         </div>
       </div>
