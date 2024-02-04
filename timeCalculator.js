@@ -1,9 +1,7 @@
-const JAZÜZ_MAX_DIFF = 209;
-const JAZÜZ_NETTO = 2036;
-const JAZÜZ_MINIMUM = 1827;
-
 class TimeCalculator {
   constructor() {
+    this.JAZÜZ_MAX_DIFF = -209;
+
     this.leistungVorjahr = "0:00";
     this.jazIst = "0:00";
     this.verringerung = "0:00";
@@ -13,8 +11,8 @@ class TimeCalculator {
     this.calculate = this.calculate;
     this.convertToDecimal = this.convertToDecimal;
     this.convertToTime = this.convertToTime;
-    this.calcJAZÜZDuringYear = this.calcJAZÜZDuringYear;
-    this.calcJAZÜZEndYear = this.calcJAZÜZEndYear;
+    this.calcÜzDuringYear = this.calcÜzDuringYear;
+    this.calcAtTheEndOfTheYear = this.calcAtTheEndOfTheYear;
     this.limitNumber = this.limitNumber;
   }
 
@@ -36,45 +34,97 @@ class TimeCalculator {
     return `${sign}${hours}:${mins < 10 ? "0" : ""}${mins}`;
   }
 
-  calcJAZÜZDuringYear() {
-    const mlVjMin = this.convertToDecimal(this.leistungVorjahr);
-    const JAZISTMin = this.convertToDecimal(this.jazIst);
-    const offsetMin = this.convertToDecimal(this.verringerung);
-    const maxMehrleistung = -JAZÜZ_MAX_DIFF - offsetMin;
-    const bereinigteMehrleistung = Math.min(
-      0,
-      Math.max(mlVjMin, maxMehrleistung)
-    );
-    return this.convertToTime(bereinigteMehrleistung + JAZISTMin);
+  calcÜzDuringYear(ÜzOldIncreased, ÜzNewIncrease, ISTIncrease) {
+    let state = "Start";
+    let result = 0;
+
+    // Zustandsobjekt mit Zuständen als Schlüssel und Aktionen als Werte
+    const actions = {
+      Start: () => "ConvertToDecimal",
+      ConvertToDecimal: () => {
+        // Konvertiere alle Eingaben zu Dezimalwerten
+        ÜzOldIncreased = this.convertToDecimal(ÜzOldIncreased);
+        ÜzNewIncrease = this.convertToDecimal(ÜzNewIncrease);
+        ISTIncrease = this.convertToDecimal(ISTIncrease);
+        return "Calc"; // Gehe zum nächsten Schritt
+      },
+      Calc: () => {
+        result =
+          Math.max(ÜzNewIncrease, this.JAZÜZ_MAX_DIFF - ÜzOldIncreased) +
+          ISTIncrease;
+        return "End";
+      },
+      End: () => {
+        return "Done"; // Beende die Schleife
+      },
+    };
+
+    // Schleife durch die Zustände basierend auf den Aktionen
+    while (state !== "Done") {
+      const action = actions[state];
+      if (action) {
+        state = action();
+      } else {
+        console.error("Undefinierter Zustand: " + state);
+        break;
+      }
+    }
+
+    return this.convertToTime(result);
   }
 
-  limitNumber(x) {
-    return Math.min(Math.max(x, JAZÜZ_MINIMUM), JAZÜZ_NETTO);
-  }
+  calcAtTheEndOfTheYear(ÜzOldIncreased, ÜzNewIncrease, ISTIncrease, sum) {
+    let state = "Start";
+    let result = 0;
 
-  calcJAZÜZEndYear() {
-    const ISO = -this.convertToDecimal(this.leistungVorjahr);
-    const ISO_Bearbeitet = -this.convertToDecimal(this.verringerung);
-    const IST = -this.convertToDecimal(this.jazIst);
-    const ÜZ = this.convertToDecimal(this.jazUeberzeitStand);
+    // Zustandsobjekt mit Zuständen als Schlüssel und Aktionen als Werte
+    const actions = {
+      Start: () => "ConvertToDecimal",
+      ConvertToDecimal: () => {
+        // Konvertiere alle Eingaben zu Dezimalwerten
+        ÜzOldIncreased = this.convertToDecimal(ÜzOldIncreased);
+        ÜzNewIncrease = this.convertToDecimal(ÜzNewIncrease);
+        ISTIncrease = this.convertToDecimal(ISTIncrease);
+        sum = this.convertToDecimal(sum);
+        return "Calc"; // Gehe zum nächsten Schritt
+      },
+      Calc: () => {
+        result = Math.max(
+          ÜzNewIncrease + ISTIncrease,
+          this.JAZÜZ_MAX_DIFF - ÜzOldIncreased
+        );
+        return "End";
+      },
+      End: () => "Done",
+    };
 
-    const NEW_ÜZ = JAZÜZ_NETTO - ÜZ;
-    console.log("New ÜZ", NEW_ÜZ);
+    // Schleife durch die Zustände basierend auf den Aktionen
+    while (state !== "Done") {
+      const action = actions[state];
+      if (action) {
+        state = action();
+      } else {
+        console.error("Undefinierter Zustand: " + state);
+        break;
+      }
+    }
 
-    const NEW_HIGH_ÜZ =
-      NEW_ÜZ + IST + Math.min(ISO + ISO_Bearbeitet, JAZÜZ_MAX_DIFF);
-    console.log("New High ÜZ", NEW_HIGH_ÜZ);
-    const LIMIT_HIGH_ÜZ = this.limitNumber(NEW_HIGH_ÜZ);
-    console.log("Limit High ÜZ", LIMIT_HIGH_ÜZ);
-
-    const res = -Math.max(0, LIMIT_HIGH_ÜZ - Math.max(JAZÜZ_MINIMUM, NEW_ÜZ));
-    return this.convertToTime(res);
+    return this.convertToTime(result);
   }
 
   calculate() {
     let result = this.datumCheck
-      ? this.calcJAZÜZEndYear()
-      : this.calcJAZÜZDuringYear();
+      ? this.calcAtTheEndOfTheYear(
+          this.verringerung,
+          this.leistungVorjahr,
+          this.jazIst,
+          this.jazUeberzeitStand
+        )
+      : this.calcÜzDuringYear(
+          this.verringerung,
+          this.leistungVorjahr,
+          this.jazIst
+        );
     this.result = result === "NaN:NaN" ? "" : result;
   }
 }
