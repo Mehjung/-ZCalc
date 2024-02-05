@@ -86,13 +86,22 @@ class TimeCalculator {
         ÜzNewIncrease = this.convertToDecimal(ÜzNewIncrease);
         ISTIncrease = this.convertToDecimal(ISTIncrease);
         sum = this.convertToDecimal(sum);
-        return "Calc"; // Gehe zum nächsten Schritt
+        return "Calc";
       },
       Calc: () => {
-        result = Math.max(
-          ÜzNewIncrease + ISTIncrease,
-          this.JAZÜZ_MAX_DIFF - ÜzOldIncreased
-        );
+        result =
+          Math.max(ÜzNewIncrease, this.JAZÜZ_MAX_DIFF - ÜzOldIncreased) +
+          ISTIncrease;
+        return "CheckForISTDecrease";
+      },
+      CheckForISTDecrease: () => {
+        return sum + ISTIncrease <= 0 ? "End" : "Overflow";
+      },
+
+      Overflow: () => {
+        const oldBorder = Math.max(this.JAZÜZ_MAX_DIFF, ÜzNewIncrease - sum);
+        const newBorder = Math.max(this.JAZÜZ_MAX_DIFF, -sum - ISTIncrease);
+        result = oldBorder - newBorder;
         return "End";
       },
       End: () => "Done",
