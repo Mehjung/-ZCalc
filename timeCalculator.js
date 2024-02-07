@@ -95,12 +95,17 @@ class TimeCalculator {
         return "CheckForISTDecrease";
       },
       CheckForISTDecrease: () => {
-        return sum + ISTIncrease <= 0 ? "End" : "Overflow";
+        return ISTIncrease < 0 ? "Overflow" : "End";
       },
 
       Overflow: () => {
-        const oldBorder = Math.max(this.JAZÜZ_MAX_DIFF, ÜzNewIncrease - sum);
-        const newBorder = Math.max(this.JAZÜZ_MAX_DIFF, -sum - ISTIncrease);
+        const ÜZSchwelleOffset = Math.max(
+          ÜzNewIncrease,
+          this.JAZÜZ_MAX_DIFF - ÜzOldIncreased
+        );
+        const IST = sum + ÜZSchwelleOffset;
+        const oldBorder = Math.max(this.JAZÜZ_MAX_DIFF, ÜZSchwelleOffset - IST);
+        const newBorder = Math.max(this.JAZÜZ_MAX_DIFF, -IST - ISTIncrease);
         result = oldBorder - newBorder;
         return "End";
       },
